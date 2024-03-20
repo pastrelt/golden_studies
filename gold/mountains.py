@@ -1,7 +1,7 @@
 ''' Первый спринт
 Создание базы данных.
-Создание класса по работе с данными, с помощью которого добавляяю новые значения в таблицу.
-Написание REST API в отдельном файле start.py, который вызывает метод из класса по работе с данными.
+Создание класса по работе с данными, с помощью которого добавляю новые значения в таблицу.
+Написание REST API, который вызывает метод из класса по работе с данными.
 '''
 import os
 import psycopg2
@@ -130,6 +130,35 @@ class Database:
         self.conn.commit()
         return inserted_id
 
+    def get_record_by_id(self, id):
+        self.cur.execute("SELECT * FROM my_mountain WHERE id = %s", (id,))
+        record = self.cur.fetchone()
+        if record:
+            return {
+                "id": record[0],
+                "beauty_title": record[1],
+                "title": record[2],
+                "other_titles": record[3],
+                "connect": record[4],
+                "add_time": record[5],
+                "email": record[6],
+                "phone": record[7],
+                "fam": record[8],
+                "name": record[9],
+                "otc": record[10],
+                "latitude": record[11],
+                "longitude": record[12],
+                "height": record[13],
+                "winter": record[14],
+                "summer": record[15],
+                "autumn": record[16],
+                "spring": record[17],
+                "images": record[18],
+                "status": record[19]
+            }
+        else:
+            return None
+
     def update_status(self, pereval_id, new_status):
         # Mетод update_status принимает идентификатор перевала pereval_id и
         # новый статус new_status. Перед выполнением обновления проверяется,
@@ -153,7 +182,45 @@ class Database:
         except psycopg2.Error as e:
             return {"status": 500, "message": str(e), "id": None}
 
-# # Оставил данный код, он подтверждает работоспособность класса.
+# Инициализация Flask приложения
+app = Flask(__name__)
+
+# Метод POST submitData для REST API
+@app.route('/submitData', methods=['POST'])
+def submitData():
+    data = request.get_json()
+    if not data:
+        return jsonify({"status": 400, "message": "Bad Request", "id": None})
+
+    try:
+        db = Database()
+        inserted_id = db.insert_mountains(data)
+        return jsonify({"status": 200, "message": "Отправлено успешно", "id": inserted_id})
+
+    except Exception as e:
+        return jsonify({"status": 500, "message": str(e), "id": None})
+
+# Метод GET submitData/<id> для REST API
+@app.route('/submitData/', methods=['GET'])
+def get_record_by_id():
+    data_id = request.args.get('id')
+    print(data_id) #проверка
+    if not data_id:
+        return jsonify({"status": 400, "message": "Bad Request", "id": {}})
+
+    try:
+        db = Database()
+        inserted_id = db.get_record_by_id(data_id)
+        return jsonify({"status": 200, "message": "Запрос успешно завершен.", "id": inserted_id})
+
+    except Exception as e:
+        return jsonify({"status": 500, "message": str(e), "id": None})
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+# # Оставил данный код для себя, он подтверждает работоспособность класса и является POST запросом.
 # # Создаем экземпляр класса Database
 # db = Database()
 #
@@ -192,25 +259,3 @@ class Database:
 # # Вызываем метод update_status для проверки работоспособности
 # update_result = db.update_status(inserted_id, 'pending')
 # print(update_result)
-
-# Инициализация Flask приложения
-app = Flask(__name__)
-
-# Метод POST submitData для REST API
-@app.route('/submitData', methods=['POST'])
-def submitData():
-    data = request.get_json()
-    print(not data)
-    if not data:
-        return jsonify({"status": 400, "message": "Bad Request", "id": None})
-
-    try:
-        db = Database()
-        inserted_id = db.insert_mountains(data)
-        return jsonify({"status": 200, "message": "Отправлено успешно", "id": inserted_id})
-
-    except Exception as e:
-        return jsonify({"status": 500, "message": str(e), "id": None})
-
-if __name__ == '__main__':
-    app.run(debug=True)
