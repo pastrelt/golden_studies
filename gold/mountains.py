@@ -159,6 +159,34 @@ class Database:
         else:
             return None
 
+    def get_records_by_user_email(self, email):
+        self.cur.execute("SELECT * FROM my_mountain WHERE email = %s", (email,))
+        records = []
+        for record in self.cur.fetchall():
+            records.append({
+                "id": record[0],
+                "beauty_title": record[1],
+                "title": record[2],
+                "other_titles": record[3],
+                "connect": record[4],
+                "add_time": record[5],
+                "email": record[6],
+                "phone": record[7],
+                "fam": record[8],
+                "name": record[9],
+                "otc": record[10],
+                "latitude": record[11],
+                "longitude": record[12],
+                "height": record[13],
+                "winter": record[14],
+                "summer": record[15],
+                "autumn": record[16],
+                "spring": record[17],
+                "images": record[18],
+                "status": record[19]
+            })
+        return records
+
     def update_status(self, pereval_id, new_status):
         # Mетод update_status принимает идентификатор перевала pereval_id и
         # новый статус new_status. Перед выполнением обновления проверяется,
@@ -185,7 +213,7 @@ class Database:
 # Инициализация Flask приложения
 app = Flask(__name__)
 
-# Метод POST submitData для REST API
+# Метод POST /submitData для REST API
 @app.route('/submitData', methods=['POST'])
 def submitData():
     data = request.get_json()
@@ -200,11 +228,10 @@ def submitData():
     except Exception as e:
         return jsonify({"status": 500, "message": str(e), "id": None})
 
-# Метод GET submitData/<id> для REST API
+# Метод GET /submitData/<id> для REST API
 @app.route('/submitData/', methods=['GET'])
-def get_record_by_id():
+def submitData_id():
     data_id = request.args.get('id')
-    print(data_id) #проверка
     if not data_id:
         return jsonify({"status": 400, "message": "Bad Request", "id": {}})
 
@@ -216,8 +243,25 @@ def get_record_by_id():
     except Exception as e:
         return jsonify({"status": 500, "message": str(e), "id": None})
 
+
+# Метод GET /submitData/?user_email=<email> для REST API
+@app.route('/submitData/<email>', methods=['GET'])
+def submitData_email(email):
+    print(email)  # для проверки
+    if not email:
+        return jsonify({"status": 400, "message": "Bad Request", "id": {}})
+
+    try:
+        db = Database()
+        inserted_id = db.get_records_by_user_email(email)
+        return jsonify({"status": 200, "message": "Запрос успешно завершен.", "id": inserted_id})
+
+    except Exception as e:
+        return jsonify({"status": 500, "message": str(e), "id": None})
+
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 # # Оставил данный код для себя, он подтверждает работоспособность класса и является POST запросом.
