@@ -1,39 +1,15 @@
 ''' Первый и второй спринт.
-Написание REST API в отдельном файле start.py, который вызывает из класса методы:
+Написание REST API в отдельном файле methods.py, который вызывает из класса методы:
 - по работе с данными;
 -
 '''
 import psycopg2
 from psycopg2.extras import Json
-from flask import Flask, request, jsonify
 
-
-# # Инициализация Flask приложения
-# app = Flask(__name__)
-# # Метод POST submitData для REST API
-# @app.route('/submitData', methods=['POST'])
-# def pas():
-#     return print('3')
-#
-# def submitData():
-#     data = request.get_json()
-#     if not data:
-#         return jsonify({"status": 400, "message": "Bad Request", "id": None})
-#
-#     try:
-#         print('1')
-#         inserted_id = db.insert_mountains(data)
-#         return {"status": 200, "message": "Отправлено успешно", "id": inserted_id}
-#
-#     except Exception as e:
-#         return jsonify({"status": 500, "message": str(e), "id": None})
-#
-# if __name__ == '__main__':
-#     app.run(debug=True)
 
 # Класс для работы с базой данных
 class Database:
-    def __init__(self):
+    def __init__(self, host, port):
         self.conn = psycopg2.connect(
             database="mountains",
             user="postgres",
@@ -66,6 +42,63 @@ class Database:
         inserted_id = self.cur.fetchone()[0]
         self.conn.commit()
         return inserted_id
+
+    def get_record_by_id(self, id):
+        self.cur.execute("SELECT * FROM my_mountain WHERE id = %s", (id,))
+        record = self.cur.fetchone()
+        if record:
+            return {
+                "id": record[0],
+                "beauty_title": record[1],
+                "title": record[2],
+                "other_titles": record[3],
+                "connect": record[4],
+                "add_time": record[5],
+                "email": record[6],
+                "phone": record[7],
+                "fam": record[8],
+                "name": record[9],
+                "otc": record[10],
+                "latitude": record[11],
+                "longitude": record[12],
+                "height": record[13],
+                "winter": record[14],
+                "summer": record[15],
+                "autumn": record[16],
+                "spring": record[17],
+                "images": record[18],
+                "status": record[19]
+            }
+        else:
+            return None
+
+    def get_records_by_user_email(self, email):
+        self.cur.execute("SELECT * FROM my_mountain WHERE email = %s", (email,))
+        records = []
+        for record in self.cur.fetchall():
+            records.append({
+                "id": record[0],
+                "beauty_title": record[1],
+                "title": record[2],
+                "other_titles": record[3],
+                "connect": record[4],
+                "add_time": record[5],
+                "email": record[6],
+                "phone": record[7],
+                "fam": record[8],
+                "name": record[9],
+                "otc": record[10],
+                "latitude": record[11],
+                "longitude": record[12],
+                "height": record[13],
+                "winter": record[14],
+                "summer": record[15],
+                "autumn": record[16],
+                "spring": record[17],
+                "images": record[18],
+                "status": record[19]
+            })
+        return records
 
     def update_status(self, pereval_id, new_status):
         # Mетод update_status принимает идентификатор перевала pereval_id и
