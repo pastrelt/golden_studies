@@ -4,12 +4,10 @@
 Написание REST API, который вызывает методы из класса - Databases файла classes.
 '''
 import os
-import psycopg2
-from psycopg2.extras import Json
 from flask import Flask, request, jsonify
 import methods
 
-# Открытие/создание рабочей БД.
+# Проверка наличия/создание рабочей БД.
 host_db = os.getenv('FSTR_DB_HOST')
 port_db = os.getenv('FSTR_DB_PORT')
 login_db = os.getenv('FSTR_DB_LOGIN')
@@ -19,56 +17,75 @@ db = methods.Create_Databases_Tables(host_db, port_db, login_db, password_db)
 db.create_db()
 db.create_table()
 
+
 # Инициализация Flask приложения.
 app = Flask(__name__)
+db = methods.Database(host_db, port_db)
 
 # Метод POST /submitData для REST API.
 # Запись данных о горе.
 @app.route('/submitData', methods=['POST'])
 def submitData():
     data = request.get_json()
-    if not data:
-        return jsonify({"status": 400, "message": "Bad Request", "id": None})
 
-    try:
-        db = methods.Database(host_db, port_db)
-        inserted_id = db.insert_mountains(data)
-        return jsonify({"status": 200, "message": "Отправлено успешно", "id": inserted_id})
+    def method(db, data):
+        return db.insert_mountains(data)
 
-    except Exception as e:
-        return jsonify({"status": 500, "message": str(e), "id": None})
+    result = methods.Check_And_Reply(data, method)
+    return result.check_and_reply(db)
+    # if not data:
+    #     return jsonify({"status": 400, "message": "Bad Request", "id": None})
+    #
+    # try:
+    #     inserted_id = db.insert_mountains(data)
+    #     return jsonify({"status": 200, "message": "Отправлено успешно", "id": inserted_id})
+    #
+    # except Exception as e:
+    #     return jsonify({"status": 500, "message": str(e), "id": None})
+
 
 # Метод GET /submitData/<id> для REST API.
 # Просматр конкретной записи по ее id.
 @app.route('/submitData/', methods=['GET'])
 def submitData_id():
     data_id = request.args.get('id')
-    if not data_id:
-        return jsonify({"status": 400, "message": "Bad Request", "id": {}})
 
-    try:
-        db = methods.Database(host_db, port_db)
-        inserted_id = db.get_record_by_id(data_id)
-        return jsonify({"status": 200, "message": "Запрос успешно завершен.", "id": inserted_id})
+    def method(db, data_id):
+        return db.get_record_by_id(data_id)
 
-    except Exception as e:
-        return jsonify({"status": 500, "message": str(e), "id": None})
+    result = methods.Check_And_Reply(data_id, method)
+    return result.check_and_reply(db)
+
+    # if not data_id:
+    #     return jsonify({"status": 400, "message": "Bad Request", "id": {}})
+    #
+    # try:
+    #     inserted_id = db.get_record_by_id(data_id)
+    #     return jsonify({"status": 200, "message": "Запрос успешно завершен.", "id": inserted_id})
+    #
+    # except Exception as e:
+    #     return jsonify({"status": 500, "message": str(e), "id": None})
 
 
 # Метод GET /submitData/?user_email=<email> для REST API.
 # Просматр списока записей всех объектов, которые внесены пользователем с почтой <email>.
 @app.route('/submitData/<email>', methods=['GET'])
 def submitData_email(email):
-    if not email:
-        return jsonify({"status": 400, "message": "Bad Request", "id": {}})
 
-    try:
-        db = methods.Database(host_db, port_db)
-        inserted_id = db.get_records_by_user_email(email)
-        return jsonify({"status": 200, "message": "Запрос успешно завершен.", "id": inserted_id})
+    def method(db, email):
+        return db.get_records_by_user_email(email)
 
-    except Exception as e:
-        return jsonify({"status": 500, "message": str(e), "id": None})
+    result = methods.Check_And_Reply(email, method)
+    return result.check_and_reply(db)
+    # if not email:
+    #     return jsonify({"status": 400, "message": "Bad Request", "id": {}})
+    #
+    # try:
+    #     inserted_id = db.get_records_by_user_email(email)
+    #     return jsonify({"status": 200, "message": "Запрос успешно завершен.", "id": inserted_id})
+    #
+    # except Exception as e:
+    #     return jsonify({"status": 500, "message": str(e), "id": None})
 
 if __name__ == '__main__':
     app.run(debug=True)

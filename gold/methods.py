@@ -4,6 +4,23 @@
 '''
 import psycopg2
 from psycopg2.extras import Json
+from flask import Flask, request, jsonify
+
+class Check_And_Reply:
+    def __init__(self, data, method):
+        self.data = data
+        self.method = method
+
+    def check_and_reply(self, db):
+        if not self.data:
+            return jsonify({"status": 400, "message": "Bad Request", "id": None})
+
+        try:
+            inserted_id = self.method(db, self.data)    #db.insert_mountains(data)
+            return jsonify({"status": 200, "message": "Отправлено успешно", "id": inserted_id})
+
+        except Exception as e:
+            return jsonify({"status": 500, "message": str(e), "id": None})
 
 
 class Create_Databases_Tables:
