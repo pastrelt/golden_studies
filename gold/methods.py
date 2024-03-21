@@ -1,21 +1,91 @@
-''' Первый и второй спринт.
-Написание REST API в отдельном файле methods.py, который вызывает из класса методы:
-- по работе с данными;
--
+''' Первый спринт, Второй спринт.
+Классы
+Методы открытие/создание БД PostgreSQL, REST API.
 '''
 import psycopg2
 from psycopg2.extras import Json
 
 
-# Класс для работы с базой данных
+class Create_Databases_Tables:
+    def __init__(self, host_db, port_db, login_db, password_db):
+        self.host_db = host_db
+        self.port_db = port_db
+        self.login_db = login_db
+        self.password_db = password_db
+
+    def create_db(self):
+        conn = psycopg2.connect(
+            database="postgres",
+            user="postgres",
+            password="6J46rc2(eg",
+            host=self.host_db,
+            port=self.port_db
+        )
+        conn.autocommit = True
+
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT 1 FROM pg_catalog.pg_database WHERE datname = 'mountains';")
+        exists = cursor.fetchone()
+
+        if not exists:
+            cursor.execute("CREATE DATABASE mountains;")
+            conn.commit()
+
+        conn.close()
+
+    def create_table(self):
+        conn = psycopg2.connect(
+            database="mountains",
+            user="postgres",
+            password="6J46rc2(eg",
+            host=self.host_db,
+            port=self.port_db
+        )
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'my_mountain');")
+        table_exists = cursor.fetchone()[0]
+
+        if not table_exists:
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS my_mountain (
+                    id SERIAL PRIMARY KEY,
+                    beauty_title VARCHAR(100),
+                    title VARCHAR(100) NOT NULL,
+                    other_titles VARCHAR(100),
+                    connect TEXT,
+                    add_time TIMESTAMP,
+                    email VARCHAR(100),
+                    phone VARCHAR(20),
+                    fam VARCHAR(100),
+                    name VARCHAR(100),
+                    otc VARCHAR(100),
+                    latitude VARCHAR(20),
+                    longitude VARCHAR(20),
+                    height VARCHAR(20),
+                    winter VARCHAR(10),
+                    summer VARCHAR(10),
+                    autumn VARCHAR(10),
+                    spring VARCHAR(10),
+                    images JSON,
+                    status VARCHAR(10)
+                );
+            ''')
+            conn.commit()
+
+        conn.close()
+
 class Database:
-    def __init__(self, host, port):
+    # Класс для работы с базой данных
+
+    def __init__(self, host_db, port_db):
         self.conn = psycopg2.connect(
             database="mountains",
             user="postgres",
             password="6J46rc2(eg",
-            host=host,
-            port=port
+            host=host_db,
+            port=port_db
         )
         self.cur = self.conn.cursor()
 
