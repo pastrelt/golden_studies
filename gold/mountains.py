@@ -22,8 +22,21 @@ db.create_table()
 app = Flask(__name__)
 db = methods.Database(host_db, port_db)
 
+@app.route('/submitData/<id>', methods=['PATCH'])
+def submitData_id_patch(id):
+    data = request.get_json()
+    if not data:
+        return jsonify({"status": 400, "message": "Bad Request", "id": None})
+
+    try:
+        inserted_id = db.edit_record_by_id(id, data)
+        return jsonify({"status": 200, "message": "Отправлено успешно", "id": inserted_id})
+
+    except Exception as e:
+        return jsonify({"status": 500, "message": str(e), "id": None})
+
 # Метод POST /submitData для REST API.
-# Запись данных о горе.
+# Запись данных о горе'.
 @app.route('/submitData', methods=['POST'])
 def submitData():
     data = request.get_json()
@@ -33,16 +46,6 @@ def submitData():
 
     result = methods.Check_And_Reply(data, method)
     return result.check_and_reply(db)
-    # if not data:
-    #     return jsonify({"status": 400, "message": "Bad Request", "id": None})
-    #
-    # try:
-    #     inserted_id = db.insert_mountains(data)
-    #     return jsonify({"status": 200, "message": "Отправлено успешно", "id": inserted_id})
-    #
-    # except Exception as e:
-    #     return jsonify({"status": 500, "message": str(e), "id": None})
-
 
 # Метод GET /submitData/<id> для REST API.
 # Просматр конкретной записи по ее id.
@@ -56,17 +59,6 @@ def submitData_id():
     result = methods.Check_And_Reply(data_id, method)
     return result.check_and_reply(db)
 
-    # if not data_id:
-    #     return jsonify({"status": 400, "message": "Bad Request", "id": {}})
-    #
-    # try:
-    #     inserted_id = db.get_record_by_id(data_id)
-    #     return jsonify({"status": 200, "message": "Запрос успешно завершен.", "id": inserted_id})
-    #
-    # except Exception as e:
-    #     return jsonify({"status": 500, "message": str(e), "id": None})
-
-
 # Метод GET /submitData/?user_email=<email> для REST API.
 # Просматр списока записей всех объектов, которые внесены пользователем с почтой <email>.
 @app.route('/submitData/<email>', methods=['GET'])
@@ -77,15 +69,21 @@ def submitData_email(email):
 
     result = methods.Check_And_Reply(email, method)
     return result.check_and_reply(db)
-    # if not email:
-    #     return jsonify({"status": 400, "message": "Bad Request", "id": {}})
-    #
-    # try:
-    #     inserted_id = db.get_records_by_user_email(email)
-    #     return jsonify({"status": 200, "message": "Запрос успешно завершен.", "id": inserted_id})
-    #
-    # except Exception as e:
-    #     return jsonify({"status": 500, "message": str(e), "id": None})
+
+# Метод PATCH /submitData/<id> для REST API.
+# Редактирование записи по id.
+# @app.route('/submitData/<id>', methods=['PATCH'])
+# def submitData_id_patch(id):
+#     data = request.get_json()
+#
+#     def method(db, data):
+#         return db.edit_record_by_id(id, data)
+#
+#     result = methods.Check_And_Reply(data, method)
+#     return result.check_and_reply(db)
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
@@ -131,3 +129,30 @@ if __name__ == '__main__':
 # # Вызываем метод update_status для проверки работоспособности
 # update_result = db.update_status(inserted_id, 'pending')
 # print(update_result)
+
+# {
+#     "beauty_title": "Some Title",
+#     "title": "Ну и ну",
+#     "other_titles": "Other Titles",
+#     "connect": "Some Connection",
+#     "add_time": "2022-01-01",
+#     "user": {
+#         "email": "UUUUUU",
+#         "fam": "XXXXXXX",
+#         "name": "XXXXX",
+#         "otc": "XXXXXX",
+#         "phone": "VVVVVVVV"
+#     },
+#     "coords": {
+#         "latitude": "888.888",
+#         "longitude": "444.444",
+#         "height": "5000"
+#     },
+#     "level": {
+#         "winter": "High",
+#         "summer": "Low",
+#         "autumn": "Medium",
+#         "spring": "Low"
+#     },
+#     "images": ["image1.jpg", "image2.jpg"]
+# }

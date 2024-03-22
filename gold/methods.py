@@ -1,6 +1,5 @@
 ''' Первый спринт, Второй спринт.
-Классы
-Методы открытие/создание БД PostgreSQL, REST API.
+Классы: открытие/создание БД (PostgreSQL),  ответы на запросы REST API, исключения.
 '''
 import psycopg2
 from psycopg2.extras import Json
@@ -31,6 +30,7 @@ class Create_Databases_Tables:
         self.password_db = password_db
 
     def create_db(self):
+        # Проверка наличия БД mountains, создание при ее отсутствии.
         conn = psycopg2.connect(
             database="postgres",
             user="postgres",
@@ -52,6 +52,7 @@ class Create_Databases_Tables:
         conn.close()
 
     def create_table(self):
+        # Создаем таблицу my_mountain если она не создана.
         conn = psycopg2.connect(
             database="mountains",
             user="postgres",
@@ -94,7 +95,6 @@ class Create_Databases_Tables:
         conn.close()
 
 class Database:
-    # Класс для работы с базой данных
 
     def __init__(self, host_db, port_db):
         self.conn = psycopg2.connect(
@@ -106,14 +106,42 @@ class Database:
         )
         self.cur = self.conn.cursor()
 
+    def edit_record_by_id(self, id, data):
+        # Редактируем существующую запись, кроме ФИО, адреса почты, номера телефона и статуса, если она в статусе new.
+        allowed_fields = ['beauty_title', 'title', 'other_titles', 'connect', 'add_time',
+                          'latitude', 'longitude', 'height',
+                          'winter', 'summer', 'autumn', 'spring',
+                          'images']
+        # for key in data.keys():
+        #     if key not in allowed_fields:
+        #         return {"state": 0, "message": f"Поле '{key}' не подлежит редактированию."}
+
+
+        self.cur.execute("SELECT status FROM my_mountain WHERE id = %s", (id,))
+        status = self.cur.fetchone()
+        if status[0] == 'new':
+            update_query = "UPDATE my_mountain SET "
+            update_values = []
+            for key, value in data.items():
+                update_query += f"{key} = %s, "
+                update_values.append(value)
+            update_query = update_query[:-2] + f" WHERE id = {id}"
+            self.cur.execute(update_query, tuple(update_values))
+            self.conn.commit()
+            return {"state": 1}
+        else:
+            return {"state": 0, "message": "Record status is not 'new'."}
+
     def insert_mountains(self, my_data):
         # Метод insert_pereval принимает словарь pereval_data с информацией о перевале
         # и вставляет его в базу данных.
         # Статус модерации устанавливается в "new" при добавлении новой записи.
         query = '''
             INSERT INTO my_mountain (beauty_title, title, other_titles, connect, add_time,
-                                     email, fam, name, otc, phone, latitude, longitude, height,
-                                     winter, summer, autumn, spring, images, status)
+                                     email, fam, name, otc, phone, 
+                                     latitude, longitude, height, 
+                                     winter, summer, autumn, spring, 
+                                     images, status)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         '''
@@ -131,6 +159,8 @@ class Database:
         return inserted_id
 
     def get_record_by_id(self, id):
+        # Предоставляем одну запись по её id.
+        # Выводим всю информацию об объекте, в том числе статус модерации.
         self.cur.execute("SELECT * FROM my_mountain WHERE id = %s", (id,))
         record = self.cur.fetchone()
         if record:
@@ -160,6 +190,8 @@ class Database:
             return None
 
     def get_records_by_user_email(self, email):
+        # Выводим список данных обо всех объектах,
+        # которые пользователь с почтой <email> отправил на сервер.
         self.cur.execute("SELECT * FROM my_mountain WHERE email = %s", (email,))
         records = []
         for record in self.cur.fetchall():
@@ -188,10 +220,8 @@ class Database:
         return records
 
     def update_status(self, pereval_id, new_status):
-        # Mетод update_status принимает идентификатор перевала pereval_id и
-        # новый статус new_status. Перед выполнением обновления проверяется,
-        # что новый статус является одним из допустимых значений.
-        # Затем выполняется SQL-запрос для обновления статуса записи в базе данных.
+        # Mетод изменения статуса модерации.
+        # Новый статус является одним из допустимых значений.
         valid_statuses = ['new', 'pending', 'accepted', 'rejected']
         if new_status not in valid_statuses:
             return {"status": 400, "message": "Недопустимое значение для статуса", "id": None}
