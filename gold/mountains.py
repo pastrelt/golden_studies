@@ -121,6 +121,9 @@ if __name__ == '__main__':
 #     },
 #     "images": ["image1.jpg", "image2.jpg"]
 # }
+
+
+
 #
 # # Вызываем метод insert_pereval
 # inserted_id = db.insert_mountains(my_data)
@@ -129,6 +132,9 @@ if __name__ == '__main__':
 # # Вызываем метод update_status для проверки работоспособности
 # update_result = db.update_status(inserted_id, 'pending')
 # print(update_result)
+
+
+
 
 # {
 #     "beauty_title": "Some Title",
@@ -156,3 +162,13 @@ if __name__ == '__main__':
 #     },
 #     "images": ["image1.jpg", "image2.jpg"]
 # }
+
+
+
+# UPDATE my_mountain SET beauty_title = %s, title = %s, other_titles = %s, connect = %s,
+#                        add_time = %s, coords = %s, level = %s, images = %s
+#                    WHERE id = 6
+#                    ['Some Title', 'Ну и ну', 'Other Titles', 'Some Connection', '2022-01-01',
+#                    {'latitude': '888.888', 'longitude': '444.444', 'height': '5000'},
+#                    {'winter': 'High', 'summer': 'Low', 'autumn': 'Medium', 'spring': 'Low'},
+#                    ['image1.jpg', 'image2.jpg']]

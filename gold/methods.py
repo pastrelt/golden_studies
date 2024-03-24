@@ -4,6 +4,7 @@
 import psycopg2
 from psycopg2.extras import Json
 from flask import Flask, request, jsonify
+import json
 
 class Check_And_Reply:
     def __init__(self, data, method):
@@ -106,35 +107,79 @@ class Database:
         )
         self.cur = self.conn.cursor()
 
+    # def extract_values(self, data):
+    #     # Получаем список значений из json.
+    #     values = []
+    #     if isinstance(data, dict):
+    #         for value in data.values():
+    #             values.extend(self.extract_values(value))
+    #     # elif isinstance(data, list):
+    #     #     for item in data:
+    #     #         values.extend(self.extract_values(item))
+    #     else:
+    #         values.append(data)
+    #     return values
+    def extract_values(self, data):
+        values = []
+        if isinstance(data, dict):
+            for value in data.values():
+                values.extend(self.extract_values(value))
+        elif isinstance(data, list):
+            # for item in data:
+            if isinstance(data, list):
+                values.append(json.dumps(data))
+            else:
+                values.extend(self.extract_values(data))
+        else:
+            values.append(data)
+        return values
+
+    def extract_keys(self, data):
+        keys = []
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if not isinstance(value, dict):
+                    keys.append(key)
+                else:
+                    keys.extend(self.extract_keys(value))
+        return keys
+
     def edit_record_by_id(self, id, data):
-        # Редактируем существующую запись, кроме ФИО, адреса почты, номера телефона и статуса, если она в статусе new.
-        allowed_fields = ['beauty_title', 'title', 'other_titles', 'connect', 'add_time',
-                          'latitude', 'longitude', 'height',
-                          'winter', 'summer', 'autumn', 'spring',
-                          'images']
+        # Редактируем существующую запись, кроме ФИО, адреса почты, номера телефона и статуса,
+        # если  status = new.
+        allowed_fields = ['beauty_title', 'title', 'other_titles', 'connect', 'add_time']
+        # allowed_fields = ['beauty_title', 'title', 'other_titles',
+        #                   'connect', 'add_time', 'coords', 'level', 'images']
+        # Проверка запроса на корректность.
         # for key in data.keys():
         #     if key not in allowed_fields:
         #         return {"state": 0, "message": f"Поле '{key}' не подлежит редактированию."}
 
-
+        # Проверка на разрешенный для корректировки статус.
         self.cur.execute("SELECT status FROM my_mountain WHERE id = %s", (id,))
         status = self.cur.fetchone()
         if status[0] == 'new':
+
+            # Получаем список ключей и список значений из json.
+            update_values = self.extract_values(data)
+            update_key = self.extract_keys(data)
+
+            # Создание SQL запроса из составных частей на корректировку данных строки.
             update_query = "UPDATE my_mountain SET "
-            update_values = []
-            for key, value in data.items():
+            print(1)
+            for key in update_key:
                 update_query += f"{key} = %s, "
-                update_values.append(value)
+                print(2)
             update_query = update_query[:-2] + f" WHERE id = {id}"
-            self.cur.execute(update_query, tuple(update_values))
+            print(update_query, update_values)
+            self.cur.execute(update_query, update_values)
             self.conn.commit()
             return {"state": 1}
         else:
-            return {"state": 0, "message": "Record status is not 'new'."}
+            return {"state": 0, "message": "Статус записи не 'new'."}
 
     def insert_mountains(self, my_data):
-        # Метод insert_pereval принимает словарь pereval_data с информацией о перевале
-        # и вставляет его в базу данных.
+        # Метод добавляет запись в базу данных (POST).
         # Статус модерации устанавливается в "new" при добавлении новой записи.
         query = '''
             INSERT INTO my_mountain (beauty_title, title, other_titles, connect, add_time,
@@ -159,7 +204,7 @@ class Database:
         return inserted_id
 
     def get_record_by_id(self, id):
-        # Предоставляем одну запись по её id.
+        # Предоставляем одну запись по её id (GET,<id>).
         # Выводим всю информацию об объекте, в том числе статус модерации.
         self.cur.execute("SELECT * FROM my_mountain WHERE id = %s", (id,))
         record = self.cur.fetchone()
@@ -190,7 +235,7 @@ class Database:
             return None
 
     def get_records_by_user_email(self, email):
-        # Выводим список данных обо всех объектах,
+        # Выводим список данных обо всех объектах (GET<email>),
         # которые пользователь с почтой <email> отправил на сервер.
         self.cur.execute("SELECT * FROM my_mountain WHERE email = %s", (email,))
         records = []
