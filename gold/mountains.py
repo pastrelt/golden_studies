@@ -5,6 +5,7 @@
 '''
 import os
 from flask import Flask, request, jsonify
+from flask_swagger import swagger
 import methods
 
 # Проверка наличия/создание рабочей БД.
@@ -22,69 +23,153 @@ db.create_table()
 app = Flask(__name__)
 db = methods.Database(host_db, port_db)
 
+# Метод PATCH /submitData/<id> для REST API.
+# Корректировка существующих данных о горе'.
 @app.route('/submitData/<id>', methods=['PATCH'])
 def submitData_id_patch(id):
+    """
+       Update data by id.
+       ---
+       parameters:
+         - name: id
+           in: path
+           type: string
+           required: true
+           description: ID of the record to update
+         - name: data
+           in: body
+           type: object
+           required: true
+           description: Data to update
+       responses:
+         200:
+           description: Successful response
+         400:
+           description: Bad Request
+         500:
+           description: Internal Server Error
+    """
     data = request.get_json()
-    if not data:
-        return jsonify({"status": 400, "message": "Bad Request", "id": None})
 
-    try:
-        inserted_id = db.edit_record_by_id(id, data)
-        return jsonify({"status": 200, "message": "Отправлено успешно", "id": inserted_id})
+    # Подготовка метода insert_mountains к отправке, в качестве аргумента.
+    def method(db, data):
+        return db.edit_record_by_id(id, data)
 
-    except Exception as e:
-        return jsonify({"status": 500, "message": str(e), "id": None})
+    result = methods.Check_And_Reply(data, method)
+    return result.check_and_reply(db)
 
-# Метод POST /submitData для REST API.
+# Обработка POST запроса /submitData для REST API.
 # Запись данных о горе'.
 @app.route('/submitData', methods=['POST'])
 def submitData():
+    """
+       Update data by id.
+       ---
+       parameters:
+         - name: id
+           in: path
+           type: string
+           required: true
+           description: ID of the record to update
+         - name: data
+           in: body
+           type: object
+           required: true
+           description: Data to update
+       responses:
+         200:
+           description: Successful response
+         400:
+           description: Bad Request
+         500:
+           description: Internal Server Error
+    """
     data = request.get_json()
 
+    # Подготовка метода insert_mountains к отправке, в качестве аргумента.
     def method(db, data):
         return db.insert_mountains(data)
 
     result = methods.Check_And_Reply(data, method)
     return result.check_and_reply(db)
 
-# Метод GET /submitData/<id> для REST API.
-# Просматр конкретной записи по ее id.
+# Обработка GET запроса /submitData/<id> для REST API.
+# Просмотр конкретной записи по ее id.
 @app.route('/submitData/', methods=['GET'])
 def submitData_id():
+    """
+       Update data by id.
+       ---
+       parameters:
+         - name: id
+           in: path
+           type: string
+           required: true
+           description: ID of the record to update
+         - name: data
+           in: body
+           type: object
+           required: true
+           description: Data to update
+       responses:
+         200:
+           description: Successful response
+         400:
+           description: Bad Request
+         500:
+           description: Internal Server Error
+    """
     data_id = request.args.get('id')
 
+    # Подготовка метода get_record_by_id к отправке, в качестве аргумента.
     def method(db, data_id):
         return db.get_record_by_id(data_id)
 
     result = methods.Check_And_Reply(data_id, method)
     return result.check_and_reply(db)
 
-# Метод GET /submitData/?user_email=<email> для REST API.
-# Просматр списока записей всех объектов, которые внесены пользователем с почтой <email>.
+# Обработка GET запроса /submitData/?user_email=<email> для REST API.
+# Просмотр списка записей всех объектов, которые внесены пользователем с почтой <email>.
 @app.route('/submitData/<email>', methods=['GET'])
 def submitData_email(email):
-
+    """
+       Update data by id.
+       ---
+       parameters:
+         - name: id
+           in: path
+           type: string
+           required: true
+           description: ID of the record to update
+         - name: data
+           in: body
+           type: object
+           required: true
+           description: Data to update
+       responses:
+         200:
+           description: Successful response
+         400:
+           description: Bad Request
+         500:
+           description: Internal Server Error
+    """
+    # Подготовка метода get_records_by_user_email к отправке, в качестве аргумента.
     def method(db, email):
         return db.get_records_by_user_email(email)
 
     result = methods.Check_And_Reply(email, method)
     return result.check_and_reply(db)
 
-# Метод PATCH /submitData/<id> для REST API.
-# Редактирование записи по id.
-# @app.route('/submitData/<id>', methods=['PATCH'])
-# def submitData_id_patch(id):
-#     data = request.get_json()
-#
-#     def method(db, data):
-#         return db.edit_record_by_id(id, data)
-#
-#     result = methods.Check_And_Reply(data, method)
-#     return result.check_and_reply(db)
+# Отображение спецификации Swagger /spec:
+@app.route("/spec")
+def spec():
+    swag = swagger(app)
+    swag['info']['version'] = "1.0"
+    swag['info']['title'] = "My API"
+    return jsonify(swag)
 
-
-
-
+# Запуск Flask приложения:
 if __name__ == '__main__':
     app.run(debug=True)
 

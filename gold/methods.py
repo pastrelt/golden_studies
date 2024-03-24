@@ -1,5 +1,8 @@
 ''' Первый спринт, Второй спринт.
-Классы: открытие/создание БД (PostgreSQL),  ответы на запросы REST API, исключения.
+Классы:
+- открытие/создание БД (PostgreSQL),
+- ответов на запросы REST API,
+- обработки исключений.
 '''
 import psycopg2
 from psycopg2.extras import Json
@@ -12,6 +15,7 @@ class Check_And_Reply:
         self.method = method
 
     def check_and_reply(self, db):
+    # Метод обработки исключений.
         if not self.data:
             return jsonify({"status": 400, "message": "Bad Request", "id": None})
 
@@ -31,7 +35,7 @@ class Create_Databases_Tables:
         self.password_db = password_db
 
     def create_db(self):
-        # Проверка наличия БД mountains, создание при ее отсутствии.
+    # Метод проверки наличия БД mountains и ее создания, в случае отсутствии.
         conn = psycopg2.connect(
             database="postgres",
             user="postgres",
@@ -53,7 +57,7 @@ class Create_Databases_Tables:
         conn.close()
 
     def create_table(self):
-        # Создаем таблицу my_mountain если она не создана.
+    # Метод создания таблицы my_mountain, если она не создана.
         conn = psycopg2.connect(
             database="mountains",
             user="postgres",
@@ -107,19 +111,9 @@ class Database:
         )
         self.cur = self.conn.cursor()
 
-    # def extract_values(self, data):
-    #     # Получаем список значений из json.
-    #     values = []
-    #     if isinstance(data, dict):
-    #         for value in data.values():
-    #             values.extend(self.extract_values(value))
-    #     # elif isinstance(data, list):
-    #     #     for item in data:
-    #     #         values.extend(self.extract_values(item))
-    #     else:
-    #         values.append(data)
-    #     return values
     def extract_values(self, data):
+    # Метод собирает из запроса json все значения,
+    # оставляя значениям в списках тип json!
         values = []
         if isinstance(data, dict):
             for value in data.values():
@@ -135,6 +129,8 @@ class Database:
         return values
 
     def extract_keys(self, data):
+    # Метод из запроса json собирает все ключи,
+    # кроме ключей, значением которых является 'dict'!
         keys = []
         if isinstance(data, dict):
             for key, value in data.items():
@@ -145,15 +141,9 @@ class Database:
         return keys
 
     def edit_record_by_id(self, id, data):
-        # Редактируем существующую запись, кроме ФИО, адреса почты, номера телефона и статуса,
-        # если  status = new.
+    # Vtnjl pедактируеn существующую запись, кроме ФИО, адреса почты, номера телефона и статуса,
+    # если  status = new.
         allowed_fields = ['beauty_title', 'title', 'other_titles', 'connect', 'add_time']
-        # allowed_fields = ['beauty_title', 'title', 'other_titles',
-        #                   'connect', 'add_time', 'coords', 'level', 'images']
-        # Проверка запроса на корректность.
-        # for key in data.keys():
-        #     if key not in allowed_fields:
-        #         return {"state": 0, "message": f"Поле '{key}' не подлежит редактированию."}
 
         # Проверка на разрешенный для корректировки статус.
         self.cur.execute("SELECT status FROM my_mountain WHERE id = %s", (id,))
@@ -179,8 +169,8 @@ class Database:
             return {"state": 0, "message": "Статус записи не 'new'."}
 
     def insert_mountains(self, my_data):
-        # Метод добавляет запись в базу данных (POST).
-        # Статус модерации устанавливается в "new" при добавлении новой записи.
+    # Метод добавляет запись в базу данных (POST).
+    # Статус модерации устанавливается в "new" при добавлении новой записи.
         query = '''
             INSERT INTO my_mountain (beauty_title, title, other_titles, connect, add_time,
                                      email, fam, name, otc, phone, 
@@ -204,8 +194,8 @@ class Database:
         return inserted_id
 
     def get_record_by_id(self, id):
-        # Предоставляем одну запись по её id (GET,<id>).
-        # Выводим всю информацию об объекте, в том числе статус модерации.
+    # Предоставляем одну запись по её id (GET,<id>).
+    # Выводим всю информацию об объекте, в том числе статус модерации.
         self.cur.execute("SELECT * FROM my_mountain WHERE id = %s", (id,))
         record = self.cur.fetchone()
         if record:
@@ -235,8 +225,8 @@ class Database:
             return None
 
     def get_records_by_user_email(self, email):
-        # Выводим список данных обо всех объектах (GET<email>),
-        # которые пользователь с почтой <email> отправил на сервер.
+    # Выводим список данных обо всех объектах (GET<email>),
+    # которые пользователь с почтой <email> отправил на сервер.
         self.cur.execute("SELECT * FROM my_mountain WHERE email = %s", (email,))
         records = []
         for record in self.cur.fetchall():
@@ -265,8 +255,8 @@ class Database:
         return records
 
     def update_status(self, pereval_id, new_status):
-        # Mетод изменения статуса модерации.
-        # Новый статус является одним из допустимых значений.
+    # Mетод изменения статуса модерации.
+    # Новый статус является одним из допустимых значений.
         valid_statuses = ['new', 'pending', 'accepted', 'rejected']
         if new_status not in valid_statuses:
             return {"status": 400, "message": "Недопустимое значение для статуса", "id": None}
