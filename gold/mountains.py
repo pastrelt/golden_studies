@@ -6,7 +6,7 @@
 import os
 from flask import Flask, request, jsonify
 from flask_swagger import swagger
-import methods
+import class_mount
 
 # Проверка наличия/создание рабочей БД.
 host_db = os.getenv('FSTR_DB_HOST')
@@ -14,14 +14,14 @@ port_db = os.getenv('FSTR_DB_PORT')
 login_db = os.getenv('FSTR_DB_LOGIN')
 password_db = os.getenv('FSTR_DB_PASS')
 
-db = methods.Create_Databases_Tables(host_db, port_db, login_db, password_db)
+db = class_mount.Create_Databases_Tables(host_db, port_db, login_db, password_db)
 db.create_db()
 db.create_table()
 
 
 # Инициализация Flask приложения.
 app = Flask(__name__)
-db = methods.Database(host_db, port_db)
+db = class_mount.Database(host_db, port_db)
 
 # Метод PATCH /submitData/<id> для REST API.
 # Корректировка существующих данных о горе'.
@@ -55,7 +55,7 @@ def submitData_id_patch(id):
     def method(db, data):
         return db.edit_record_by_id(id, data)
 
-    result = methods.Check_And_Reply(data, method)
+    result = class_mount.Check_And_Reply(data, method)
     return result.check_and_reply(db)
 
 # Обработка POST запроса /submitData для REST API.
@@ -90,7 +90,7 @@ def submitData():
     def method(db, data):
         return db.insert_mountains(data)
 
-    result = methods.Check_And_Reply(data, method)
+    result = class_mount.Check_And_Reply(data, method)
     return result.check_and_reply(db)
 
 # Обработка GET запроса /submitData/<id> для REST API.
@@ -125,7 +125,7 @@ def submitData_id():
     def method(db, data_id):
         return db.get_record_by_id(data_id)
 
-    result = methods.Check_And_Reply(data_id, method)
+    result = class_mount.Check_And_Reply(data_id, method)
     return result.check_and_reply(db)
 
 # Обработка GET запроса /submitData/?user_email=<email> для REST API.
@@ -158,7 +158,7 @@ def submitData_email(email):
     def method(db, email):
         return db.get_records_by_user_email(email)
 
-    result = methods.Check_And_Reply(email, method)
+    result = class_mount.Check_And_Reply(email, method)
     return result.check_and_reply(db)
 
 # Отображение спецификации Swagger /spec:
