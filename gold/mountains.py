@@ -8,11 +8,11 @@ from flask import Flask, request, jsonify
 from flask_swagger import swagger
 import class_mount
 
-# Это попытка сделать свой первый публичный проект.
-# Серверная функция под аккаунт Vercel.
-def handler(request, response):
-    print('Всем привет!')
-    return {"statusCode": 200, "body": "Привет от Mountain.py!"}
+# # Это попытка сделать свой первый публичный проект.
+# # Серверная функция под аккаунт Vercel.
+# def handler(request, response):
+#     print('Это может работать )))!')
+#     return {"statusCode": 200, "body": "Привет от Mountain.py!"}
 
 # Проверка наличия/создание рабочей БД.
 host_db = os.getenv('FSTR_DB_HOST')
