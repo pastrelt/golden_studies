@@ -1,5 +1,7 @@
 {
   "functions": {
-    "gold/mountains.py": {}
+    "gold/mountains.py": {
+      "handler": "mountains.handler"
+    }
   }
 }
